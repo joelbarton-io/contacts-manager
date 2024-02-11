@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Contacts Manager</title>
+    <link rel="stylesheet" href="/stylesheets/styles.css" />
+    <script src="/javascripts/jquery.js"></script>
+    <script src="/javascripts/handlebars.js"></script>
+  </head>
+  <body>
+    <!-- MENU VIEW -->
+    <script id="menu-view-template" type="text/x-handlebars-template">
+      <div id="menu-view">
+        <header>
+          <h1>
+            <a type="button">Contacts Manager</a>
+          </h1>
+        </header>
+        <div id="sub-menu">
+          <button id="new-contact-button" type="button">
+            + Contact
+          </button>
+          <input
+            id="dynamic-search-contacts"
+            type="search"
+            name="dynamic-search-contacts"
+            placeholder="search"
+          />
+          <button id="new-tag-button" type="button">+ Tag</button>
+        </div>
+
+      </div>
+    </script>
+
+    <!-- CONTACTS VIEW -->
+    <script id="contacts-view-template" type="text/x-handlebars-template">
+      <div id="contacts-view">
+      	{{#each arrayOfContacts}}
+        {{> contactPartial}}
+        {{/each}}
+      </div>
+    </script>
+
+    <script
+      id="contact-view-template-partial"
+      type="text/x-handlebars-template"
+    >
+      <div class="contact-card" data-id="{{id}}">
+        <div class="info">
+          <h2 class="visible">{{full_name}}</h2>
+          <h2 class="hidden">{{phone_number}}</h2>
+        </div>
+      </div>
+    </script>
+
+    <!-- TAGS VIEW -->
+    <script id="tags-view-template" type="text/x-handlebars-template">
+      <div id="tags-view">
+        {{#each tags}}
+          <span class="tag-element">{{this}}</span>
+        {{/each}}
+      </div>
+    </script>
+
+    <script id="tags-view-partial-template" type="text/x-handlebars-template">
+        
+    </script>
+    <!-- MODAL VIEW -->
+    <script id="modal-view-template" type="text/x-handlebars-template">
+      <div id="modal-view" class="modal">
+        <!-- content -->
+      </div>
+    </script>
+
+    <!-- MODAL CONTACT VIEW -->
+    <script id="modal-contact-view-template" type="text/x-handlebars-template">
+      <div
+        id="modal-contact-view"
+        class="modal-content"
+        data-contact-id="{{contact.id}}"
+      >
+        <h2>{{contact.full_name}}</h2>
+        <div class="modal-content-element">
+          Tags! wooo
+        </div>
+        <div class="modal-content-element">
+          <div class="key">Phone</div>
+          <div class="value">{{contact.phone_number}}</div>
+        </div>
+        <div class="modal-content-element">
+          <div class="key">Email</div>
+          <div class="value">{{contact.email}}</div>
+        </div>
+
+        <div class="modal-mini-menu">
+          <button id="update-contact-button" type="button">Update</button>
+          <button id="delete-contact-button" type="button">Delete</button>
+        </div>
+      </div>
+    </script>
+
+    <!-- MODAL UPDATE CONTACT VIEW (form) -->
+    <script
+      id="modal-update-contact-view-template"
+      type="text/x-handlebars-template"
+    >
+      <form
+        class="modal-content"
+        id="modal-update-contact-view"
+        action="api/contacts/{{contact.id}}"
+        method="PUT"
+        data-contact-id="{{contact.id}}"
+        novalidate
+      >
+        <h2>Update Contact</h2>
+        <div class="modal-content-element">
+          <label for="contact-full-name" class="key">Name</label>
+          <input
+            id="contact-full-name"
+            name="contact-full-name"
+            type="text"
+            required
+            value="{{contact.full_name}}"
+            placeholder="John Wick"
+          /></div>
+        <div class="modal-content-element">
+          <label for="contact-phone-number" class="key">Phone</label>
+          <input
+            id="contact-phone-number"
+            name="contact-phone-number"
+            type="tel"
+            required
+            value="{{contact.phone_number}}"
+            placeholder="1112223333"
+          /></div>
+        <div class="modal-content-element">
+          <label for="contact-email-address" class="key">Email</label>
+          <input
+            id="contact-email-address"
+            name="contact-email-address"
+            type="email"
+            required
+            value="{{contact.email}}"
+            placeholder="lovesdog@continental.org"
+          />
+        </div>
+        <div class="modal-mini-menu">
+          <button type="submit">Confirm</button>
+          <button id="back-button" type="button">Go Back</button>
+        </div>
+
+      </form>
+    </script>
+
+    <!-- MODAL CREATE CONTACT VIEW -->
+    <script
+      id="modal-create-contact-view-template"
+      type="text/x-handlebars-template"
+    >
+      <form
+        class="modal-content"
+        id="modal-create-contact-view"
+        action="api/contacts/"
+        method="post"
+        novalidate
+      >
+        <h2>Create Contact</h2>
+        <div class="modal-content-element">
+          <label for="contact-full-name" class="key">Name</label>
+          <input
+            id="contact-full-name"
+            name="contact-full-name"
+            type="text"
+            required
+            placeholder="John Wick"
+          /></div>
+        <div class="modal-content-element">
+          <label for="contact-phone-number" class="key">Phone</label>
+          <input
+            id="contact-phone-number"
+            name="contact-phone-number"
+            type="tel"
+            required
+            placeholder="1112223333"
+          /></div>
+        <div class="modal-content-element">
+          <label for="contact-email-address" class="key">Email</label>
+          <input
+            id="contact-email-address"
+            name="contact-email-address"
+            type="email"
+            required
+            placeholder="lovesdog@continental.org"
+          />
+        </div>
+        <div class="modal-mini-menu">
+          <button type="submit">Create</button>
+          <button name="discard-button" type="button">Discard</button>
+        </div>
+      </form>
+    </script>
+
+    <!-- MODAL CREATE TAG VIEW -->
+    <script
+      id="modal-create-tag-view-template"
+      type="text/x-handlebars-template"
+    >
+      <div class="modal-content" id="modal-create-tag-view">
+        <h2>Create Tag</h2>
+        <div class="modal-content-element">
+          <label for="new-tag" class="key">Tag</label>
+          <input
+            id="new-tag"
+            name="new-tag"
+            type="text"
+            required
+            placeholder="Aquantaince"
+          /></div>
+        <div class="modal-mini-menu">
+          <button id="create-tag-button" type="button">Create</button>
+          <button name="discard-button" type="button">Discard</button>
+        </div>
+      </div>
+    </script>
+
+    <script src="/javascripts/main.js"></script>
+  </body>
+</html>

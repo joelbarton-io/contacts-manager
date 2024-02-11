@@ -1,0 +1,51 @@
+[
+  {
+    "id": 1,
+    "full_name": "Naveed Fida",
+    "email": "nf@example.com",
+    "phone_number": "12345678901",
+    "tags": "friend"
+  },
+  {
+    "id": 3,
+    "full_name": "Pete Hanson",
+    "email": "ph@example.com",
+    "phone_number": "54321098761",
+    "tags": null
+  },
+  {
+    "full_name": "Theresa Claire Barton",
+    "phone_number": "4065995509",
+    "email": "tbarton406@gmail.com",
+    "tags": "aaaaaa,colleague,family",
+    "id": 5
+  },
+  {
+    "full_name": "Rich Barton",
+    "phone_number": "4065392042",
+    "email": "richbartonmd@gmail.com",
+    "tags": "father,family,friend,work",
+    "id": 6
+  },
+  {
+    "full_name": "Elizabeth Barton",
+    "phone_number": "4065995509",
+    "email": "lizbartonliz@gmail.com",
+    "tags": "family",
+    "id": 7
+  },
+  {
+    "full_name": "EVIL JOEL",
+    "phone_number": "4065995509",
+    "email": "joelbarton406@gmail.com",
+    "tags": "being evil",
+    "id": 11
+  },
+  {
+    "full_name": "Phoebe Bridgers",
+    "phone_number": "6666666666",
+    "email": "phoebelovesDogs@yahoo.net",
+    "tags": null,
+    "id": 13
+  }
+]

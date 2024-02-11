@@ -1,0 +1,17 @@
+  <!-- <script id="test" type="text/x-handlebars-template">
+      <h1>{{heading}}</h1>
+      <p>{{paragraph}}</p>
+      <footer>{{footer}}</footer>
+      <ul>
+        {{#each list}}
+        {{> testPartial }}
+        {{/each}}
+      </ul>
+    </script>
+    <script id="test-partial" type="text/x-handlebars-template">
+      <li>{{this}}</li>
+      <ul>
+        <li>1</li>
+        <li>2</li>
+      </ul>
+    </script> -->
