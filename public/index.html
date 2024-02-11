@@ -43,6 +43,7 @@
       </div>
     </script>
 
+    <!-- single contact (partial) -->
     <script
       id="contact-view-template-partial"
       type="text/x-handlebars-template"
@@ -58,15 +59,16 @@
     <!-- TAGS VIEW -->
     <script id="tags-view-template" type="text/x-handlebars-template">
       <div id="tags-view">
-        {{#each tags}}
-          <span class="tag-element">{{this}}</span>
-        {{/each}}
+        {{> tagsPartial}}
       </div>
     </script>
 
     <script id="tags-view-partial-template" type="text/x-handlebars-template">
-        
+      {{#each tags as |tag|}}
+        <span class="tag-element">{{tag}}</span>
+      {{/each}}
     </script>
+
     <!-- MODAL VIEW -->
     <script id="modal-view-template" type="text/x-handlebars-template">
       <div id="modal-view" class="modal">
@@ -83,7 +85,8 @@
       >
         <h2>{{contact.full_name}}</h2>
         <div class="modal-content-element">
-          Tags! wooo
+          <!-- pass in the contact's tags here -->
+            {{> tagsPartial}}
         </div>
         <div class="modal-content-element">
           <div class="key">Phone</div>
@@ -114,7 +117,16 @@
         data-contact-id="{{contact.id}}"
         novalidate
       >
+        <!-- having the h2 inside the form feels wrong -->
         <h2>Update Contact</h2>
+        <div class="modal-content-element">
+          <label for="contact-tag" class="key">Tag</label>
+          <select name="contact-tag" id="contact-tag">
+            {{#each tags as |tag|}}
+              <option class="value" value="{{tag}}">{{tag}}</option>
+            {{/each}}
+          </select>
+        </div>
         <div class="modal-content-element">
           <label for="contact-full-name" class="key">Name</label>
           <input
@@ -150,7 +162,6 @@
           <button type="submit">Confirm</button>
           <button id="back-button" type="button">Go Back</button>
         </div>
-
       </form>
     </script>
 

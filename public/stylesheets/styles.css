@@ -225,12 +225,24 @@ h1 {
   margin: 0px;
 }
 
-/* for the form modal: */
+/* for the update form modal: */
+/* select#tag-options-dropdown {
+  background-color: aqua;
+  margin: 0px;
+  padding: 10px;
+  width: 210px;
+  height: 25px;
+  border: none;
+  border-radius: 30px;
+  text-align: center;
+  font-style: italic;
+  font-size: 1.1em;
+} */
 .modal-content-element input {
   margin: 0px;
   padding: 10px;
   width: 210px;
-  height: 30px;
+  height: 25px;
   border: none;
   border-radius: 30px;
   text-align: center;
@@ -240,6 +252,13 @@ h1 {
 
 .modal-content-element input:focus {
   outline: none;
+}
+select#contact-tag {
+  width: 210px;
+  height: 25px;
+  /* padding: 0px; */
+  border: 0px;
+  border-radius: 30px;
 }
 
 .modal-content-element .key {

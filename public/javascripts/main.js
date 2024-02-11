@@ -1,12 +1,9 @@
 class App {
-  constructor() {}
-
   async init() {
     this.contactsArray = await this.fetchContacts();
     this.contactsMap = this.makeContactsMap(this.contactsArray);
     this.tagsSet = this.makeTagsSet(this.contactsArray);
     this.selectedTagsSet = new Set();
-
     this.registerPartials();
     this.setupMenuView();
     this.setupTagsView();
@@ -38,44 +35,39 @@ class App {
     );
   }
 
-  filterBySearch(event) {
-    const filtered = this.contactsArray.filter((contact) =>
-      contact.full_name.toLowerCase().includes(event.target.value.toLowerCase())
-    );
-
+  repopulateContactsView(contacts) {
     $("#contacts-view").empty();
 
-    filtered.forEach((contact) => {
-      let renderedContactHTML = Render.individualContact(contact);
+    contacts.forEach((contact) => {
+      let renderedContactHTML = App.render(
+        "contact-view-template-partial",
+        contact
+      );
       $("#contacts-view").append(renderedContactHTML);
     });
   }
 
-  filterContactsByTag() {
-    const list = $("#contacts-view");
+  filterBySearch(event) {
+    const filtered = this.contactsArray.filter((contact) =>
+      contact.full_name.toLowerCase().includes(event.target.value.toLowerCase())
+    );
+    this.repopulateContactsView(filtered);
+  }
 
+  filterContactsByTag() {
+    let filtered;
     if (this.selectedTagsSet.size === 0) {
-      const allContacts = this.contactsArray.map((contact) => {
-        let renderedContactHTML = Render.individualContact(contact);
-        return renderedContactHTML;
+      filtered = this.contactsArray;
+    } else {
+      filtered = this.contactsArray.filter(({ tags }) => {
+        if (tags) {
+          const tagsArray = tags.split(",");
+          return tagsArray.some((tag) => this.selectedTagsSet.has(tag));
+        }
       });
-      list.html(allContacts);
-      return;
     }
 
-    const filtered = this.contactsArray.filter(({ tags }) => {
-      if (tags) {
-        const tagsArray = tags.split(",");
-        return tagsArray.some((tag) => this.selectedTagsSet.has(tag));
-      }
-    });
-
-    list.empty();
-
-    filtered.forEach((contact) => {
-      let renderedContactHTML = Render.individualContact(contact);
-      list.append(renderedContactHTML);
-    });
+    this.repopulateContactsView(filtered);
   }
 
   makeContactsMap(arr) {
@@ -170,9 +162,10 @@ class App {
     const id = contactCard.data("id");
     contactCard.toggleClass("active");
 
-    const modalContactViewHTML = App.render("modal-contact-view-template", {
-      contact: this.contactsMap.get(id),
-    });
+    const modalContactViewHTML = App.render(
+      "modal-contact-view-template",
+      this.makeContextObject(id, false)
+    );
 
     $("#modal-view").append(modalContactViewHTML);
 
@@ -199,6 +192,7 @@ class App {
     );
 
     $("#modal-view").append(modalUpdateContactViewHTML);
+    $("#modal-update-contact-view").on("submit", ServerAction.updateContact);
 
     $("#back-button")[0].addEventListener("click", () => {
       $("#modal-update-contact-view").hide();
@@ -208,10 +202,8 @@ class App {
 
   setupModalCreateContactView() {
     const createContactViewHTML = App.render(
-      "modal-create-contact-view-template",
-      {
-        tags: [...this.tagsSet.values()],
-      }
+      "modal-create-contact-view-template"
+      /* need context? */
     );
     $("#modal-view").html(createContactViewHTML);
     $("#modal-create-contact-view").on("submit", ServerAction.createContact);
@@ -249,23 +241,24 @@ class App {
 class ServerAction {
   static async createContact(e) {
     e.preventDefault();
-    alert("submitted from create contact function");
+
     const form = e.target;
     const url = form.getAttribute("action");
     const method = form.getAttribute("method");
     const headers = { "Content-Type": "application/json" };
-    const body = this.processFormToJSON(form);
 
-    try {
-      const res = await fetch(url, { method, headers, body });
-      if (res.ok) {
-        const newContact = await res.json();
-        this.contactsMap.set(newContact.id, newContact);
-        this.contactsArray = this.contactsMap.values();
-      }
-    } catch (error) {
-      console.error(error);
-    }
+    // const body = this.processFormToJSON(form);
+
+    // try {
+    //   const res = await fetch(url, { method, headers, body });
+    //   if (res.ok) {
+    //     const newContact = await res.json();
+    //     this.contactsMap.set(newContact.id, newContact);
+    //     this.contactsArray = this.contactsMap.values();
+    //   }
+    // } catch (error) {
+    //   console.error(error);
+    // }
   }
 
   static async deleteContact(id) {
@@ -289,24 +282,26 @@ class ServerAction {
     const url = form.getAttribute("action");
     const method = form.getAttribute("method");
     const headers = { "Content-Type": "application/json" };
-    const body = this.processEditFormToJSON(form);
-    try {
-      const res = await fetch(url, { method, headers, body });
-      if (res.status === 201) {
-        const updatedContact = await res.json();
-        this.contactsMap.set(updatedContact.id, updatedContact);
-        this.contactsArray = this.contactsMap.values();
+    const body = this.processUpdatedContactToJSON(form);
+    console.log(body);
+    // try {
+    //   const res = await fetch(url, { method, headers, body });
+    //   if (res.status === 201) {
+    //     const updatedContact = await res.json();
+    //     this.contactsMap.set(updatedContact.id, updatedContact);
+    //     this.contactsArray = this.contactsMap.values();
 
-        $("#update-contact-view").empty();
-      }
-    } catch (error) {
-      console.log(error);
-    }
+    //     $("#update-contact-view").empty();
+    //   }
+    // } catch (error) {
+    //   console.log(error);
+    // }
   }
 
   // to do next
-  static processEditFormToJSON(form) {
+  static processUpdatedContactToJSON(form) {
     const data = { id: $(form).data("contact-id") };
+
     const fd = new FormData(form);
     for (let [key, value] of fd.entries()) {
       switch (key) {
@@ -319,12 +314,10 @@ class ServerAction {
         case "contact-phone-number":
           data.phone_number = value;
           break;
-        case "contact-tags":
-          const selectElement = form.querySelector("#contact-tags");
-          const selectedOptions = [...selectElement.selectedOptions]
-            .map((option) => option.value)
-            .join(",");
-          data.tags = selectedOptions;
+        case "contact-tag":
+          const selectedTag = $(form)("#contact-tags #contact-tag");
+          console.log(selectedTag);
+          data.tags = selectedTag;
         default:
           break;
       }
