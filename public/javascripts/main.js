@@ -1,5 +1,5 @@
 class App {
-  async init() {
+  async setup() {
     this.contactsArray = await this.fetchContacts();
     this.contactsMap = this.makeContactsMap(this.contactsArray);
     this.tagsSet = this.makeTagsSet(this.contactsArray);
@@ -12,15 +12,148 @@ class App {
   }
 
   async fetchContacts() {
-    const url = "/api/contacts";
-    const method = "get";
+    try {
+      const response = await fetch("/api/contacts", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("There was a problem with fetching contacts: ", error);
+    }
+  }
+
+  async createContact(e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const url = form.getAttribute("action");
+    const method = form.getAttribute("method");
     const headers = { "Content-Type": "application/json" };
-    const res = await fetch(url, { method, headers });
-    return res.json();
+    const body = this.processNewContactToJSON(form);
+
+    try {
+      const res = await fetch(url, { method, headers, body });
+      if (res.ok) {
+        const newContact = await res.json();
+        this.contactsMap.set(newContact.id, newContact);
+        this.contactsArray = [...this.contactsMap.values()];
+        this.refreshViews();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async updateContact(e) {
+    e.preventDefault();
+    const form = e.target;
+    const url = form.getAttribute("action");
+    const method = form.getAttribute("method");
+    const headers = { "Content-Type": "application/json" };
+    const body = this.processExistingContactToJSON(form);
+
+    try {
+      const res = await fetch(url, { method, headers, body });
+      if (res.status === 201) {
+        const updatedContact = await res.json();
+        this.contactsMap.set(updatedContact.id, updatedContact);
+        this.contactsArray = [...this.contactsMap.values()];
+        this.refreshViews();
+
+        $("#update-contact-view").empty();
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async deleteContact(id) {
+    const url = `/api/contacts/${id}`;
+    const method = "DELETE";
+
+    try {
+      const res = await fetch(url, { method });
+      if (res.status === 204) {
+        this.contactsMap.delete(id);
+        this.contactsArray = [...this.contactsMap.values()];
+        this.refreshViews();
+      }
+    } catch (error) {
+      console.log(`ERROR: ${error}`);
+    }
   }
 
   static render(scriptID, context) {
     return Handlebars.compile($(`#${scriptID}`).html()).call(null, context);
+  }
+
+  processNewContactToJSON(form) {
+    const fd = new FormData(form);
+    const data = {};
+    for (let [key, value] of fd.entries()) {
+      switch (key) {
+        case "contact-full-name":
+          data.full_name = value;
+          break;
+        case "contact-email-address":
+          data.email = value;
+          break;
+        case "contact-phone-number":
+          data.phone_number = value;
+          break;
+        case "contact-tag":
+          data.tags = $("#contact-tag").val();
+        default:
+          break;
+      }
+    }
+    if (!("tags" in data)) data.tags = null;
+    return JSON.stringify(data);
+  }
+
+  processExistingContactToJSON(form) {
+    const id = $(form).data("contact-id");
+    let currentTagsSet = new Set();
+    let currentTags = this.contactsMap.get(id).tags;
+
+    if (currentTags !== null) {
+      console.log("        adding currentTags");
+      [...currentTags.split(",")].forEach((existingTag) =>
+        currentTagsSet.add(existingTag)
+      );
+    }
+
+    const data = { id };
+    const fd = new FormData(form);
+
+    for (let [key, value] of fd.entries()) {
+      switch (key) {
+        case "contact-full-name":
+          data.full_name = value;
+          break;
+        case "contact-email-address":
+          data.email = value;
+          break;
+        case "contact-phone-number":
+          data.phone_number = value;
+          break;
+        case "contact-tag":
+          currentTagsSet.add($("#contact-tag").val());
+          data.tags = [...currentTagsSet.values()].join(",");
+        default:
+          break;
+      }
+    }
+    if (!("tags" in data)) data.tags = null;
+    return JSON.stringify(data);
   }
 
   registerPartials() {
@@ -103,6 +236,13 @@ class App {
     return { contact, tags };
   }
 
+  refreshViews() {
+    $("#tags-view, #contacts-view").remove();
+
+    this.setupTagsView();
+    this.setupContactsView();
+  }
+
   setupMenuView() {
     const menuViewHTML = App.render("menu-view-template");
     $("body").prepend($("<main/>"));
@@ -143,7 +283,6 @@ class App {
       arrayOfContacts: [...this.contactsMap.values()],
     };
     const contactsViewHTML = App.render("contacts-view-template", context);
-
     $("main").append(contactsViewHTML);
 
     $("#contacts-view").on("click", ".contact-card", (event) => {
@@ -192,7 +331,10 @@ class App {
     );
 
     $("#modal-view").append(modalUpdateContactViewHTML);
-    $("#modal-update-contact-view").on("submit", ServerAction.updateContact);
+    $("#modal-update-contact-view").on("submit", (e) => {
+      this.updateContact(e);
+      this.closeModalView();
+    });
 
     $("#back-button")[0].addEventListener("click", () => {
       $("#modal-update-contact-view").hide();
@@ -202,11 +344,15 @@ class App {
 
   setupModalCreateContactView() {
     const createContactViewHTML = App.render(
-      "modal-create-contact-view-template"
-      /* need context? */
+      "modal-create-contact-view-template",
+      { tags: [...this.tagsSet.values()] }
     );
+
     $("#modal-view").html(createContactViewHTML);
-    $("#modal-create-contact-view").on("submit", ServerAction.createContact);
+    $("#modal-create-contact-view").on("submit", (e) => {
+      this.createContact(e);
+      this.closeModalView();
+    });
     $('[name="discard-button"]').on("click", this.closeModalView);
   }
 
@@ -215,11 +361,11 @@ class App {
     $("#modal-view").html(createTagViewHTML);
 
     $("#create-tag-button").on("click", () => {
-      const newTag = $("#new-tag").val().trim();
+      const newTag = $("#new-tag").val().trim().toLowerCase();
       this.tagsSet.add(newTag);
       this.closeModalView();
     });
-    $('[name="discard-button"]').on("click", this.closeModalView);
+    $('[name="discard-button"]').on("click", () => this.closeModalView());
   }
 
   openModalView() {
@@ -237,125 +383,7 @@ class App {
   }
 }
 
-/* pretty much no reason to use the Class syntax here besides visually looking better */
-class ServerAction {
-  static async createContact(e) {
-    e.preventDefault();
-
-    const form = e.target;
-    const url = form.getAttribute("action");
-    const method = form.getAttribute("method");
-    const headers = { "Content-Type": "application/json" };
-
-    // const body = this.processFormToJSON(form);
-
-    // try {
-    //   const res = await fetch(url, { method, headers, body });
-    //   if (res.ok) {
-    //     const newContact = await res.json();
-    //     this.contactsMap.set(newContact.id, newContact);
-    //     this.contactsArray = this.contactsMap.values();
-    //   }
-    // } catch (error) {
-    //   console.error(error);
-    // }
-  }
-
-  static async deleteContact(id) {
-    const url = `/api/contacts/${id}`;
-    const method = "DELETE";
-
-    try {
-      const res = await fetch(url, { method });
-      if (res.status === 204) {
-        this.contactsMap.delete(id);
-        this.contactsArray = this.contactsMap.values();
-      }
-    } catch (error) {
-      console.log(`ERROR: ${error}`);
-    }
-  }
-
-  static async updateContact(e) {
-    e.preventDefault();
-    const form = e.target;
-    const url = form.getAttribute("action");
-    const method = form.getAttribute("method");
-    const headers = { "Content-Type": "application/json" };
-    const body = this.processUpdatedContactToJSON(form);
-    console.log(body);
-    // try {
-    //   const res = await fetch(url, { method, headers, body });
-    //   if (res.status === 201) {
-    //     const updatedContact = await res.json();
-    //     this.contactsMap.set(updatedContact.id, updatedContact);
-    //     this.contactsArray = this.contactsMap.values();
-
-    //     $("#update-contact-view").empty();
-    //   }
-    // } catch (error) {
-    //   console.log(error);
-    // }
-  }
-
-  // to do next
-  static processUpdatedContactToJSON(form) {
-    const data = { id: $(form).data("contact-id") };
-
-    const fd = new FormData(form);
-    for (let [key, value] of fd.entries()) {
-      switch (key) {
-        case "contact-full-name":
-          data.full_name = value;
-          break;
-        case "contact-email-address":
-          data.email = value;
-          break;
-        case "contact-phone-number":
-          data.phone_number = value;
-          break;
-        case "contact-tag":
-          const selectedTag = $(form)("#contact-tags #contact-tag");
-          console.log(selectedTag);
-          data.tags = selectedTag;
-        default:
-          break;
-      }
-    }
-    if (!("tags" in data)) data.tags = null;
-    return JSON.stringify(data);
-  }
-
-  static processFormToJSON(form) {
-    const data = {};
-    const fd = new FormData(form);
-    for (let [key, value] of fd.entries()) {
-      switch (key) {
-        case "new-contact-full-name":
-          data.full_name = value;
-          break;
-        case "new-contact-email-address":
-          data.email = value;
-          break;
-        case "new-contact-phone-number":
-          data.phone_number = value;
-          break;
-        case "new-contact-tags":
-          const selectElement = form.querySelector("#new-contact-tags");
-          const selectedOptions = Array.from(selectElement.selectedOptions)
-            .map((option) => option.value)
-            .join(",");
-          data.tags = selectedOptions;
-        default:
-          break;
-      }
-    }
-    if (!("tags" in data)) data.tags = null;
-    return JSON.stringify(data);
-  }
-}
-
 $(() => {
   let app = new App();
-  app.init();
+  app.setup();
 });

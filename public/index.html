@@ -179,6 +179,14 @@
       >
         <h2>Create Contact</h2>
         <div class="modal-content-element">
+          <label for="contact-tag" class="key">Tag</label>
+          <select name="contact-tag" id="contact-tag">
+            {{#each tags as |tag|}}
+              <option class="value" value="{{tag}}">{{tag}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="modal-content-element">
           <label for="contact-full-name" class="key">Name</label>
           <input
             id="contact-full-name"

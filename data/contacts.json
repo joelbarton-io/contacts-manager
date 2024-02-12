@@ -1,51 +1,37 @@
 [
   {
-    "id": 1,
-    "full_name": "Naveed Fida",
-    "email": "nf@example.com",
-    "phone_number": "12345678901",
-    "tags": "friend"
+    "full_name": "joel barton",
+    "phone_number": "406-599-6234",
+    "email": "joel_barton406@outlook.com",
+    "tags": "self",
+    "id": 1
   },
   {
-    "id": 3,
-    "full_name": "Pete Hanson",
-    "email": "ph@example.com",
-    "phone_number": "54321098761",
-    "tags": null
-  },
-  {
-    "full_name": "Theresa Claire Barton",
-    "phone_number": "4065995509",
-    "email": "tbarton406@gmail.com",
-    "tags": "aaaaaa,colleague,family",
-    "id": 5
-  },
-  {
-    "full_name": "Rich Barton",
-    "phone_number": "4065392042",
-    "email": "richbartonmd@gmail.com",
-    "tags": "father,family,friend,work",
-    "id": 6
-  },
-  {
-    "full_name": "Elizabeth Barton",
-    "phone_number": "4065995509",
-    "email": "lizbartonliz@gmail.com",
+    "full_name": "Theresa Barton",
+    "phone_number": "406-111-2222",
+    "email": "tbarton@gmail.com",
     "tags": "family",
-    "id": 7
+    "id": 2
   },
   {
-    "full_name": "EVIL JOEL",
-    "phone_number": "4065995509",
-    "email": "joelbarton406@gmail.com",
-    "tags": "being evil",
-    "id": 11
+    "full_name": "Richard Barton",
+    "phone_number": "406-599-5509",
+    "email": "richbartonmd@gmail.com",
+    "tags": "family",
+    "id": 3
   },
   {
-    "full_name": "Phoebe Bridgers",
-    "phone_number": "6666666666",
-    "email": "phoebelovesDogs@yahoo.net",
-    "tags": null,
-    "id": 13
+    "full_name": "Tess Lockey",
+    "phone_number": "111-222-3333",
+    "email": "tessLockey@gmail.com",
+    "tags": "friend",
+    "id": 4
+  },
+  {
+    "full_name": "Evil Joel",
+    "phone_number": "666-666-6666",
+    "email": "evilJoel@gmail.com",
+    "tags": "nemesis",
+    "id": 5
   }
 ]
