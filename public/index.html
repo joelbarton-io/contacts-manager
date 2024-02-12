@@ -115,15 +115,15 @@
         action="api/contacts/{{contact.id}}"
         method="PUT"
         data-contact-id="{{contact.id}}"
-        novalidate
       >
         <!-- having the h2 inside the form feels wrong -->
         <h2>Update Contact</h2>
         <div class="modal-content-element">
           <label for="contact-tag" class="key">Tag</label>
           <select name="contact-tag" id="contact-tag">
+            <option value="" selected></option>
             {{#each tags as |tag|}}
-              <option class="value" value="{{tag}}">{{tag}}</option>
+              <option value="{{tag}}">{{tag}}</option>
             {{/each}}
           </select>
         </div>
@@ -175,14 +175,14 @@
         id="modal-create-contact-view"
         action="api/contacts/"
         method="post"
-        novalidate
       >
         <h2>Create Contact</h2>
         <div class="modal-content-element">
           <label for="contact-tag" class="key">Tag</label>
           <select name="contact-tag" id="contact-tag">
+            <option value="" selected></option>
             {{#each tags as |tag|}}
-              <option class="value" value="{{tag}}">{{tag}}</option>
+              <option value="{{tag}}">{{tag}}</option>
             {{/each}}
           </select>
         </div>

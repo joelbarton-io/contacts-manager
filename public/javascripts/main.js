@@ -1,8 +1,8 @@
 class App {
-  async setup() {
+  async initialize() {
     this.contactsArray = await this.fetchContacts();
-    this.contactsMap = this.makeContactsMap(this.contactsArray);
-    this.tagsSet = this.makeTagsSet(this.contactsArray);
+    this.contactsMap = this.createContactsMapFromList(this.contactsArray);
+    this.tagsSet = this.createTagsSetFromContacts(this.contactsArray);
     this.selectedTagsSet = new Set();
     this.registerPartials();
     this.setupMenuView();
@@ -11,6 +11,7 @@ class App {
     this.setupModalView();
   }
 
+  // <---------------------Model--------------------->
   async fetchContacts() {
     try {
       const response = await fetch("/api/contacts", {
@@ -91,119 +92,7 @@ class App {
     }
   }
 
-  static render(scriptID, context) {
-    return Handlebars.compile($(`#${scriptID}`).html()).call(null, context);
-  }
-
-  processNewContactToJSON(form) {
-    const fd = new FormData(form);
-    const data = {};
-    for (let [key, value] of fd.entries()) {
-      switch (key) {
-        case "contact-full-name":
-          data.full_name = value;
-          break;
-        case "contact-email-address":
-          data.email = value;
-          break;
-        case "contact-phone-number":
-          data.phone_number = value;
-          break;
-        case "contact-tag":
-          data.tags = $("#contact-tag").val();
-        default:
-          break;
-      }
-    }
-    if (!("tags" in data)) data.tags = null;
-    return JSON.stringify(data);
-  }
-
-  processExistingContactToJSON(form) {
-    const id = $(form).data("contact-id");
-    let currentTagsSet = new Set();
-    let currentTags = this.contactsMap.get(id).tags;
-
-    if (currentTags !== null) {
-      console.log("        adding currentTags");
-      [...currentTags.split(",")].forEach((existingTag) =>
-        currentTagsSet.add(existingTag)
-      );
-    }
-
-    const data = { id };
-    const fd = new FormData(form);
-
-    for (let [key, value] of fd.entries()) {
-      switch (key) {
-        case "contact-full-name":
-          data.full_name = value;
-          break;
-        case "contact-email-address":
-          data.email = value;
-          break;
-        case "contact-phone-number":
-          data.phone_number = value;
-          break;
-        case "contact-tag":
-          currentTagsSet.add($("#contact-tag").val());
-          data.tags = [...currentTagsSet.values()].join(",");
-        default:
-          break;
-      }
-    }
-    if (!("tags" in data)) data.tags = null;
-    return JSON.stringify(data);
-  }
-
-  registerPartials() {
-    Handlebars.registerPartial(
-      "contactPartial",
-      $("#contact-view-template-partial").html()
-    );
-
-    Handlebars.registerPartial(
-      "tagsPartial",
-      $("#tags-view-partial-template").html()
-    );
-  }
-
-  repopulateContactsView(contacts) {
-    $("#contacts-view").empty();
-
-    contacts.forEach((contact) => {
-      let renderedContactHTML = App.render(
-        "contact-view-template-partial",
-        contact
-      );
-      $("#contacts-view").append(renderedContactHTML);
-    });
-  }
-
-  filterBySearch(event) {
-    const filtered = this.contactsArray.filter((contact) =>
-      contact.full_name.toLowerCase().includes(event.target.value.toLowerCase())
-    );
-    this.repopulateContactsView(filtered);
-  }
-
-  filterContactsByTag() {
-    let filtered;
-    if (this.selectedTagsSet.size === 0) {
-      filtered = this.contactsArray;
-    } else {
-      filtered = this.contactsArray.filter(({ tags }) => {
-        if (tags) {
-          const tagsArray = tags.split(",");
-          return tagsArray.some((tag) => this.selectedTagsSet.has(tag));
-        }
-      });
-    }
-
-    this.repopulateContactsView(filtered);
-  }
-
-  makeContactsMap(arr) {
+  createContactsMapFromList(arr) {
     return arr.reduce((contactMap, contact) => {
       if (!contactMap.has(contact.id)) {
         contactMap.set(contact.id, contact);
@@ -212,21 +101,11 @@ class App {
     }, new Map());
   }
 
-  makeTagsSet(arrayOfContacts) {
+  createTagsSetFromContacts(arrayOfContacts) {
     return arrayOfContacts.reduce((set, { tags }) => {
       if (tags) tags.split(",").forEach((t) => set.add(t));
       return set;
     }, new Set());
-  }
-
-  selectTag(e) {
-    $(e.target).toggleClass("selected");
-    const tag = $(e.target).text();
-    if (this.selectedTagsSet.has(tag)) {
-      this.selectedTagsSet.delete(tag);
-    } else {
-      this.selectedTagsSet.add(tag);
-    }
   }
 
   makeContextObject(id, allTags = false) {
@@ -236,17 +115,20 @@ class App {
     return { contact, tags };
   }
 
+  // <---------------------View--------------------->
+  static render(scriptID, context) {
+    return Handlebars.compile($(`#${scriptID}`).html()).call(null, context);
+  }
+
   refreshViews() {
     $("#tags-view, #contacts-view").remove();
-
     this.setupTagsView();
     this.setupContactsView();
   }
 
   setupMenuView() {
-    const menuViewHTML = App.render("menu-view-template");
-    $("body").prepend($("<main/>"));
-    $("main").append(menuViewHTML);
+    $("body").append($("<main/>"));
+    $("main").append(App.render("menu-view-template"));
 
     $(window).on("click", (e) => {
       if (e.target === $("#modal-view")[0]) {
@@ -268,10 +150,11 @@ class App {
   }
 
   setupTagsView() {
-    const tagsViewHTML = App.render("tags-view-template", {
-      tags: [...this.tagsSet.values()],
-    });
-    $("main").append(tagsViewHTML);
+    $("main").append(
+      App.render("tags-view-template", {
+        tags: [...this.tagsSet.values()],
+      })
+    );
     $("#tags-view").on("click", ".tag-element", (e) => {
       this.selectTag(e);
       this.filterContactsByTag();
@@ -279,11 +162,11 @@ class App {
   }
 
   setupContactsView() {
-    const context = {
-      arrayOfContacts: [...this.contactsMap.values()],
-    };
-    const contactsViewHTML = App.render("contacts-view-template", context);
-    $("main").append(contactsViewHTML);
+    $("main").append(
+      App.render("contacts-view-template", {
+        arrayOfContacts: [...this.contactsMap.values()],
+      })
+    );
 
     $("#contacts-view").on("click", ".contact-card", (event) => {
       this.openModalView();
@@ -292,8 +175,7 @@ class App {
   }
 
   setupModalView() {
-    const modalViewHTML = App.render("modal-view-template");
-    $("body").append(modalViewHTML);
+    $("body").append(App.render("modal-view-template"));
   }
 
   setupModalContactView(event) {
@@ -343,28 +225,64 @@ class App {
   }
 
   setupModalCreateContactView() {
-    const createContactViewHTML = App.render(
-      "modal-create-contact-view-template",
-      { tags: [...this.tagsSet.values()] }
+    $("#modal-view").html(
+      App.render("modal-create-contact-view-template", {
+        tags: [...this.tagsSet.values()],
+      })
     );
+    $("#modal-create-contact-view").on("submit", (event) => {
+      //   event.preventDefault();
 
-    $("#modal-view").html(createContactViewHTML);
-    $("#modal-create-contact-view").on("submit", (e) => {
-      this.createContact(e);
+      //   const name = $("#contact-full-name").val().trim();
+      //   const phone = $("#contact-phone-number").val().trim();
+      //   const email = $("#contact-email-address").val().trim();
+      //   const tag = $("#contact-tag").val().trim();
+
+      //   console.table({
+      //     name,
+      //     phone,
+      //     email,
+      //     tag,
+      //   });
+
+      //   let isValid = true;
+
+      //   // Validate name
+      //   if (name.trim() === "") {
+      //     isValid = false;
+      //     alert("Name cannot be empty");
+      //   }
+
+      //   // Validate phone
+      //   if (!/^\d{10}$/.test(phone)) {
+      //     isValid = false;
+      //     alert("Phone number must be exactly 10 digits");
+      //   }
+
+      //   // Validate email
+      //   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      //     isValid = false;
+      //     alert("Invalid email address");
+      //   }
+
+      //   if (isValid) {
+      //     form.submit();
+      //   }
+      this.createContact(event);
       this.closeModalView();
     });
     $('[name="discard-button"]').on("click", this.closeModalView);
   }
 
   setupModalCreateTagView() {
-    const createTagViewHTML = App.render("modal-create-tag-view-template");
-    $("#modal-view").html(createTagViewHTML);
+    $("#modal-view").html(App.render("modal-create-tag-view-template"));
 
     $("#create-tag-button").on("click", () => {
       const newTag = $("#new-tag").val().trim().toLowerCase();
       this.tagsSet.add(newTag);
       this.closeModalView();
     });
+
     $('[name="discard-button"]').on("click", () => this.closeModalView());
   }
 
@@ -381,9 +299,126 @@ class App {
     $(`#contacts-view .active`).toggleClass("active");
     $("main").toggleClass("idle");
   }
+
+  // <--------------------Controller----------------------->
+  processNewContactToJSON(form) {
+    const fd = new FormData(form);
+    const data = {};
+    for (let [key, value] of fd.entries()) {
+      switch (key) {
+        case "contact-full-name":
+          data.full_name = value;
+          break;
+        case "contact-email-address":
+          data.email = value;
+          break;
+        case "contact-phone-number":
+          data.phone_number = value;
+          break;
+        case "contact-tag":
+          const t = $("#contact-tag").val();
+          data.tags = t === "" ? null : t.val();
+        default:
+          break;
+      }
+    }
+    if (!("tags" in data)) return JSON.stringify(data);
+  }
+
+  processExistingContactToJSON(form) {
+    const id = $(form).data("contact-id");
+    let currentTagsSet = new Set();
+    let currentTags = this.contactsMap.get(id).tags;
+
+    if (currentTags !== null) {
+      [...currentTags.split(",")].forEach((existingTag) =>
+        currentTagsSet.add(existingTag)
+      );
+    }
+
+    const data = { id };
+    const fd = new FormData(form);
+
+    for (let [key, value] of fd.entries()) {
+      switch (key) {
+        case "contact-full-name":
+          data.full_name = value;
+          break;
+        case "contact-email-address":
+          data.email = value;
+          break;
+        case "contact-phone-number":
+          data.phone_number = value;
+          break;
+        case "contact-tag":
+          const t = $("#contact-tag").val();
+          if (t !== "") {
+            currentTagsSet.add(t);
+          }
+          data.tags = [...currentTagsSet.values()].join(",");
+        default:
+          break;
+      }
+    }
+    return JSON.stringify(data);
+  }
+
+  registerPartials() {
+    Handlebars.registerPartial(
+      "contactPartial",
+      $("#contact-view-template-partial").html()
+    );
+
+    Handlebars.registerPartial(
+      "tagsPartial",
+      $("#tags-view-partial-template").html()
+    );
+  }
+
+  repopulateContactsView(contacts) {
+    $("#contacts-view").empty();
+
+    contacts.forEach((contact) => {
+      $("#contacts-view").append(
+        App.render("contact-view-template-partial", contact)
+      );
+    });
+  }
+
+  filterBySearch(event) {
+    const filtered = this.contactsArray.filter((contact) =>
+      contact.full_name.toLowerCase().includes(event.target.value.toLowerCase())
+    );
+    this.repopulateContactsView(filtered);
+  }
+
+  filterContactsByTag() {
+    let filtered;
+    if (this.selectedTagsSet.size === 0) {
+      filtered = this.contactsArray;
+    } else {
+      filtered = this.contactsArray.filter(({ tags }) => {
+        if (tags) {
+          const tagsArray = tags.split(",");
+          return tagsArray.some((tag) => this.selectedTagsSet.has(tag));
+        }
+      });
+    }
+
+    this.repopulateContactsView(filtered);
+  }
+
+  selectTag(e) {
+    $(e.target).toggleClass("selected");
+    const tag = $(e.target).text();
+    if (this.selectedTagsSet.has(tag)) {
+      this.selectedTagsSet.delete(tag);
+    } else {
+      this.selectedTagsSet.add(tag);
+    }
+  }
 }
 
 $(() => {
-  let app = new App();
-  app.setup();
+  new App().initialize();
 });

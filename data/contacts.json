@@ -1,37 +1,23 @@
 [
   {
-    "full_name": "joel barton",
-    "phone_number": "406-599-6234",
-    "email": "joel_barton406@outlook.com",
-    "tags": "self",
-    "id": 1
-  },
-  {
-    "full_name": "Theresa Barton",
-    "phone_number": "406-111-2222",
-    "email": "tbarton@gmail.com",
-    "tags": "family",
-    "id": 2
-  },
-  {
-    "full_name": "Richard Barton",
-    "phone_number": "406-599-5509",
-    "email": "richbartonmd@gmail.com",
+    "full_name": "Tessa",
+    "phone_number": "111-111-1111",
+    "email": "tessa@gmail.com",
     "tags": "family",
     "id": 3
   },
   {
-    "full_name": "Tess Lockey",
-    "phone_number": "111-222-3333",
-    "email": "tessLockey@gmail.com",
-    "tags": "friend",
+    "full_name": "Chris",
+    "phone_number": "111-111-1111",
+    "email": "chris@gmail.com",
+    "tags": "colleague",
     "id": 4
   },
   {
-    "full_name": "Evil Joel",
-    "phone_number": "666-666-6666",
-    "email": "evilJoel@gmail.com",
-    "tags": "nemesis",
+    "full_name": "Natalie",
+    "phone_number": "406-111-1111",
+    "email": "natalie@gmail.com",
+    "tags": "montana",
     "id": 5
   }
 ]
