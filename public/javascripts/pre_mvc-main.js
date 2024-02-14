@@ -1,17 +1,18 @@
-class App {
-  async initialize() {
+class Model {
+  constructor() {
+    this.contactsArray;
+    this.contactsMap;
+    this.tagsSet;
+    this.selectedTagsSet;
+  }
+
+  async init() {
     this.contactsArray = await this.fetchContacts();
     this.contactsMap = this.createContactsMapFromList(this.contactsArray);
     this.tagsSet = this.createTagsSetFromContacts(this.contactsArray);
     this.selectedTagsSet = new Set();
-    this.registerPartials();
-    this.setupMenuView();
-    this.setupTagsView();
-    this.setupContactsView();
-    this.setupModalView();
   }
 
-  // <---------------------Model--------------------->
   async fetchContacts() {
     try {
       const response = await fetch("/api/contacts", {
@@ -107,28 +108,32 @@ class App {
       return set;
     }, new Set());
   }
+}
 
-  makeContextObject(id, allTags = false) {
-    const contact = this.contactsMap.get(id);
-    const contactTags = contact.tags ? contact.tags.split(",") : [];
-    const tags = allTags ? [...this.tagsSet.values()] : contactTags;
-    return { contact, tags };
+class View {
+  constructor() {
+    this.registerPartials();
   }
 
-  // <---------------------View--------------------->
-  static render(scriptID, context) {
+  registerPartials() {
+    Handlebars.registerPartial(
+      "contactPartial",
+      $("#contact-view-template-partial").html()
+    );
+
+    Handlebars.registerPartial(
+      "tagsPartial",
+      $("#tags-view-partial-template").html()
+    );
+  }
+
+  static render(scriptID, context = {}) {
     return Handlebars.compile($(`#${scriptID}`).html()).call(null, context);
-  }
-
-  refreshViews() {
-    $("#tags-view, #contacts-view").remove();
-    this.setupTagsView();
-    this.setupContactsView();
   }
 
   setupMenuView() {
     $("body").append($("<main/>"));
-    $("main").append(App.render("menu-view-template"));
+    $("main").append(this.render("menu-view-template"));
 
     $(window).on("click", (e) => {
       if (e.target === $("#modal-view")[0]) {
@@ -151,7 +156,7 @@ class App {
 
   setupTagsView() {
     $("main").append(
-      App.render("tags-view-template", {
+      this.render("tags-view-template", {
         tags: [...this.tagsSet.values()],
       })
     );
@@ -163,7 +168,7 @@ class App {
 
   setupContactsView() {
     $("main").append(
-      App.render("contacts-view-template", {
+      this.render("contacts-view-template", {
         arrayOfContacts: [...this.contactsMap.values()],
       })
     );
@@ -175,7 +180,7 @@ class App {
   }
 
   setupModalView() {
-    $("body").append(App.render("modal-view-template"));
+    $("body").append(this.render("modal-view-template"));
   }
 
   setupModalContactView(event) {
@@ -183,14 +188,14 @@ class App {
     const id = contactCard.data("id");
     contactCard.toggleClass("active");
 
-    const modalContactViewHTML = App.render(
+    const modalContactViewHTML = this.render(
       "modal-contact-view-template",
       this.makeContextObject(id, false)
     );
 
     $("#modal-view").append(modalContactViewHTML);
 
-    // this is ugly but it works
+    // Controller responsibilities:
     $("#update-contact-button").on("click", () => {
       if ($("#modal-update-contact-view").length === 0) {
         $("#modal-contact-view").hide();
@@ -207,29 +212,33 @@ class App {
   }
 
   setupModalUpdateContactView(id) {
-    const modalUpdateContactViewHTML = App.render(
+    const modalUpdateContactViewHTML = this.render(
       "modal-update-contact-view-template",
       this.makeContextObject(id, true)
     );
 
     $("#modal-view").append(modalUpdateContactViewHTML);
+
+    // Controller responsibilities:
     $("#modal-update-contact-view").on("submit", (e) => {
       this.updateContact(e);
       this.closeModalView();
     });
 
-    $("#back-button")[0].addEventListener("click", () => {
+    $("#back-button").on("click", () => {
       $("#modal-update-contact-view").hide();
       $("#modal-contact-view").show();
     });
   }
 
+  // break up between View and Controller
   setupModalCreateContactView() {
     $("#modal-view").html(
-      App.render("modal-create-contact-view-template", {
+      this.render("modal-create-contact-view-template", {
         tags: [...this.tagsSet.values()],
       })
     );
+
     $("#modal-create-contact-view").on("submit", (event) => {
       //   event.preventDefault();
 
@@ -275,7 +284,7 @@ class App {
   }
 
   setupModalCreateTagView() {
-    $("#modal-view").html(App.render("modal-create-tag-view-template"));
+    $("#modal-view").html(this.render("modal-create-tag-view-template"));
 
     $("#create-tag-button").on("click", () => {
       const newTag = $("#new-tag").val().trim().toLowerCase();
@@ -286,21 +295,58 @@ class App {
     $('[name="discard-button"]').on("click", () => this.closeModalView());
   }
 
-  openModalView() {
-    $("main").toggleClass("idle");
-    $("#modal-view").css("display", "block");
+  repopulateContactsView(contacts) {
+    $("#contacts-view").empty();
+
+    contacts.forEach((contact) => {
+      $("#contacts-view").append(
+        this.render("contact-view-template-partial", contact)
+      );
+    });
   }
 
-  closeModalView() {
-    const modalView = $("#modal-view");
-    modalView.empty();
-    modalView.css("display", "none");
-    modalView.toggleClass("active");
-    $(`#contacts-view .active`).toggleClass("active");
-    $("main").toggleClass("idle");
+  /*  THESE DONT REQUIRE ANY DATA FROM MODEL TO PERFORM ACTION
+    refreshViews() {
+      $("#tags-view, #contacts-view").remove();
+      this.setupTagsView();
+      this.setupContactsView();
+    }
+  
+    openModalView() {
+      $("main").toggleClass("idle");
+      $("#modal-view").css("display", "block");
+    }
+  
+    closeModalView() {
+      const modalView = $("#modal-view");
+      modalView.empty();
+      modalView.css("display", "none");
+      modalView.toggleClass("active");
+      $(`#contacts-view .active`).toggleClass("active");
+      $("main").toggleClass("idle");
+    } 
+    */
+}
+
+class Controller {
+  constructor() {
+    this.model = new Model();
+    this.model.init();
+    this.view = new View();
+    this.setupMenuView();
+    this.setupTagsView();
+    this.setupContactsView();
+    this.setupModalView();
   }
 
-  // <--------------------Controller----------------------->
+  // used to create `context` objects for templates
+  makeContextObject(id, allTags = false) {
+    const contact = this.contactsMap.get(id);
+    const contactTags = contact.tags ? contact.tags.split(",") : [];
+    const tags = allTags ? [...this.tagsSet.values()] : contactTags;
+    return { contact, tags };
+  }
+
   processNewContactToJSON(form) {
     const fd = new FormData(form);
     const data = {};
@@ -363,28 +409,6 @@ class App {
     return JSON.stringify(data);
   }
 
-  registerPartials() {
-    Handlebars.registerPartial(
-      "contactPartial",
-      $("#contact-view-template-partial").html()
-    );
-
-    Handlebars.registerPartial(
-      "tagsPartial",
-      $("#tags-view-partial-template").html()
-    );
-  }
-
-  repopulateContactsView(contacts) {
-    $("#contacts-view").empty();
-
-    contacts.forEach((contact) => {
-      $("#contacts-view").append(
-        App.render("contact-view-template-partial", contact)
-      );
-    });
-  }
-
   filterBySearch(event) {
     const filtered = this.contactsArray.filter((contact) =>
       contact.full_name.toLowerCase().includes(event.target.value.toLowerCase())
@@ -419,6 +443,4 @@ class App {
   }
 }
 
-$(() => {
-  new App().initialize();
-});
+$(() => new Controller());

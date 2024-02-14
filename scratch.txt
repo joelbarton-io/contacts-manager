@@ -1,17 +1,186 @@
-  <!-- <script id="test" type="text/x-handlebars-template">
-      <h1>{{heading}}</h1>
-      <p>{{paragraph}}</p>
-      <footer>{{footer}}</footer>
-      <ul>
-        {{#each list}}
-        {{> testPartial }}
-        {{/each}}
-      </ul>
+    <!-- MODAL VIEW -->
+    <script id="modal-view-template" type="text/x-handlebars-template">
+      <div id="modal-view" class="modal">
+        <!-- content -->
+      </div>
     </script>
-    <script id="test-partial" type="text/x-handlebars-template">
-      <li>{{this}}</li>
-      <ul>
-        <li>1</li>
-        <li>2</li>
-      </ul>
-    </script> -->
+
+    <!-- MODAL CONTACT VIEW -->
+    <script id="modal-contact-view-template" type="text/x-handlebars-template">
+      <div
+        id="modal-contact-view"
+        class="modal-content"
+        data-contact-id="{{contact.id}}"
+      >
+        <h2>{{contact.full_name}}</h2>
+        <div class="modal-content-element">
+          <!-- pass in the contact's tags here -->
+            {{> tagsPartial}}
+        </div>
+        <div class="modal-content-element">
+          <div class="key">Phone</div>
+          <div class="value">{{contact.phone_number}}</div>
+        </div>
+        <div class="modal-content-element">
+          <div class="key">Email</div>
+          <div class="value">{{contact.email}}</div>
+        </div>
+
+        <div class="modal-mini-menu">
+          <button id="update-contact-button" type="button">Update</button>
+          <button id="delete-contact-button" type="button">Delete</button>
+        </div>
+      </div>
+    </script>
+
+    <!-- MODAL UPDATE CONTACT VIEW (form) -->
+    <script
+      id="modal-update-contact-view-template"
+      type="text/x-handlebars-template"
+    >
+      <form
+        class="modal-content"
+        id="modal-update-contact-view"
+        action="api/contacts/{{contact.id}}"
+        method="PUT"
+        data-contact-id="{{contact.id}}"
+      >
+        <!-- having the h2 inside the form feels wrong -->
+        <h2>Update Contact</h2>
+        <div class="modal-content-element">
+          <label for="contact-tag" class="key">Tag</label>
+          <select name="contact-tag" id="contact-tag">
+            <option value="" selected></option>
+            {{#each tags as |tag|}}
+              <option value="{{tag}}">{{tag}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="modal-content-element">
+          <label for="contact-full-name" class="key">Name</label>
+          <input
+            id="contact-full-name"
+            name="contact-full-name"
+            type="text"
+            required
+            value="{{contact.full_name}}"
+            placeholder="John Wick"
+          /></div>
+        <div class="modal-content-element">
+          <label for="contact-phone-number" class="key">Phone</label>
+          <input
+            id="contact-phone-number"
+            name="contact-phone-number"
+            type="tel"
+            required
+            value="{{contact.phone_number}}"
+            placeholder="1112223333"
+          /></div>
+        <div class="modal-content-element">
+          <label for="contact-email-address" class="key">Email</label>
+          <input
+            id="contact-email-address"
+            name="contact-email-address"
+            type="email"
+            required
+            value="{{contact.email}}"
+            placeholder="lovesdog@continental.org"
+          />
+        </div>
+        <div class="modal-mini-menu">
+          <button type="submit">Confirm</button>
+          <button id="back-button" type="button">Go Back</button>
+        </div>
+      </form>
+    </script>
+
+    <!-- MODAL CREATE CONTACT VIEW -->
+    <script
+      id="modal-create-contact-view-template"
+      type="text/x-handlebars-template"
+    >
+      <form
+        class="modal-content"
+        id="modal-create-contact-view"
+        action="api/contacts/"
+        method="post"
+      >
+        <h2>Create Contact</h2>
+        <div class="modal-content-element">
+          <label for="contact-tag" class="key">Tag</label>
+          <select name="contact-tag" id="contact-tag">
+            <option value="" selected></option>
+            {{#each tags as |tag|}}
+              <option value="{{tag}}">{{tag}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="modal-content-element">
+          <label for="contact-full-name" class="key">Name</label>
+          <input
+            id="contact-full-name"
+            name="contact-full-name"
+            type="text"
+            required
+            placeholder="John Wick"
+          /></div>
+        <div class="modal-content-element">
+          <label for="contact-phone-number" class="key">Phone</label>
+          <input
+            id="contact-phone-number"
+            name="contact-phone-number"
+            type="tel"
+            required
+            placeholder="1112223333"
+          /></div>
+        <div class="modal-content-element">
+          <label for="contact-email-address" class="key">Email</label>
+          <input
+            id="contact-email-address"
+            name="contact-email-address"
+            type="email"
+            required
+            placeholder="lovesdog@continental.org"
+          />
+        </div>
+        <div class="modal-mini-menu">
+          <button type="submit">Create</button>
+          <button name="discard-button" type="button">Discard</button>
+        </div>
+      </form>
+    </script>
+
+
+/* MODAL */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  height: 450px;
+  padding: 35px;
+  width: 450px;
+
+  margin: 0px;
+  text-align: center;
+  border: none;
+  border-radius: 24% 9%;
+  background-color: #333;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
